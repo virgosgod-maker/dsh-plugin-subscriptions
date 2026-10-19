@@ -19,9 +19,18 @@ import type { ProviderUsageDisplay } from '../src/client/SubscriptionUsageBadge.
 import type { UsageWindow } from '../src/client/SubscriptionsSection.js'
 import { en, zh } from '../src/client/locales.js'
 
+// The lazy argument view the host attaches to every tool-call head. These
+// server-render tests never read it, so the structural minimum stands in for
+// the host's PartialArguments instance.
+function emptyArgs() {
+  return { keys: () => [], has: () => false, complete: () => false } as never
+}
+
 test('media tool views render the preparing phase before arguments are available', () => {
   for (const [Component, name] of [[ImageGenerateToolview, 'image_generate'], [VideoGenerateToolview, 'video_generate']] as const) {
-    const block = { phase: 'preparing' as const, callId: 'media-call', name, turn: 0, step: 0, time: 0, subCalls: [] }
+    // DSH 0.2.1 folds the lazy argument view into every tool-call head; a
+    // preparing block carries an empty one rather than omitting the field.
+    const block = { phase: 'preparing' as const, callId: 'media-call', name, turn: 0, step: 0, time: 0, subCalls: [], args: emptyArgs() }
     const html = renderToStaticMarkup(createElement(Component, { block }))
     assert.ok(html.includes(name))
   }
